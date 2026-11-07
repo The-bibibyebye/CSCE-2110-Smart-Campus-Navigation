@@ -1,0 +1,18 @@
+CSCE-2110 Project 2
+Smart Campus Navigation and Facility Analytics System
+
+Member B: Deepsan Shrestha
+
+Contributions:
+
+-Created and set up the GitHub repository for the group project.
+-Implemented the CampusGraph class using an adjacency list to represent the campus buildings and connections.
+-Implemented functions to add buildings and connections.
+-Implemented Breadth-First Search (BFS) to find reachable buildings and calculate their distances.
+-Implemented graph display, total building and connection counts, and degree calculations.
+-Implemented file loading for buildings.txt and connections.txt.
+-Created the initial main.cpp with the complete 10-option menu structure.
+-Implemented menu options 3, 4, and 5 and connected them to the CampusGraph class.
+-Added input validation to handle invalid menu choices, non-numeric input, and blank building names.
+-Tested graph functionality, BFS, disconnected buildings, and invalid inputs.
+-Used Git branches and pull requests to merge my code into the main branch.
