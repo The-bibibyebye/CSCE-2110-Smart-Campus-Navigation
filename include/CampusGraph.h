@@ -1,3 +1,6 @@
+// Author: Deepsan Shrestha
+// Purpose: Defines the CampusGraph class and its functions.
+
 #ifndef CAMPUS_GRAPH_H
 #define CAMPUS_GRAPH_H
 

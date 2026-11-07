@@ -1,3 +1,6 @@
+// Author: Deepsan Shrestha
+// Purpose: Implements campus graph operations, statistics, and BFS.
+
 #include "../include/CampusGraph.h"
 #include <string>
 #include <cctype>

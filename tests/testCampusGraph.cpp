@@ -1,3 +1,7 @@
+// Author: Deepsan Shrestha
+// Purpose: Tests the CampusGraph functions.
+
+
 #include "../include/CampusGraph.h"
 #include <iostream>
 
