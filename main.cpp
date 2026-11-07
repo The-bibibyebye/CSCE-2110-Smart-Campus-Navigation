@@ -1,3 +1,7 @@
+// Initial implementation by: Deepsan Shrestha
+// Purpose: Provides the main menu, file loading, input validation,
+// and integration of CampusGraph functionality.
+
 #include <iostream>
 #include <string>
 #include <sstream>
