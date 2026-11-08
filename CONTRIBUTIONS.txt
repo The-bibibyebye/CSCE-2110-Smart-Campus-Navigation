@@ -1,6 +1,20 @@
 CSCE-2110 Project 2
 Smart Campus Navigation and Facility Analytics System
 
+Member A: Seokhyeon Jang
+
+Contributions:
+
+- Created the Facility struct to store facility information.
+- Implemented the custom HashTable class and string hash function.
+- Used separate chaining to handle hash collisions.
+- Added ID format checks and converted IDs to uppercase.
+- Added duplicate ID checks to keep the first saved facility.
+- Implemented facility display in file order and ID search.
+- Added facilities.txt loading and basic checks for field count and missing information.
+- Added loading counts, table size, facility count, and collision count output.
+- Connected menu options 1 and 2 to facility display and ID search.
+
 Member B: Deepsan Shrestha
 
 Contributions:
