@@ -1,0 +1,86 @@
+Member C — Milestone 1 CELL Tests
+Environment: cell02-cse
+Date: November 8, 2026
+
+Build command:
+g++ -std=c++11 -Wall -Wextra -pedantic -Iinclude main.cpp src/CampusGraph.cpp src/Hashtable.cpp src/DepartmentTree.cpp -o campus
+
+Build result: PASS — compiled without reported errors or warnings.
+
+C1: Load sample departments
+Input: ./campus
+Expected: 7 departments accepted, 0 rejected.
+Actual: 7 accepted, 0 rejected.
+Result: PASS
+
+C2: Hierarchy and preorder
+Input: Options 8 and 9 with sample data.
+Expected: Hierarchy indented four spaces per level; preorder follows
+sibling insertion order without indentation.
+Actual: Both outputs matched the sample hierarchy and preorder.
+Result: PASS
+
+C3: Case-insensitive search
+Input: Option 7, computer science.
+Expected: Computer Science, parent College of Engineering,
+0 children, depth 2.
+Actual: Matched expected details.
+Result: PASS
+
+C4: Add department and preserve sibling order
+Input: Add Student Research under College of Engineering;
+search for student research; display hierarchy.
+Expected: New department found at depth 2 and displayed after
+Electrical Engineering as the parent's third child.
+Actual: Matched expected behavior.
+Result: PASS
+
+C5: Reject duplicate
+Input: Option 6, UNIVERSITY.
+Expected: Duplicate error without asking for a parent.
+Actual: Duplicate error appeared without a parent prompt.
+Result: PASS
+
+C6: Reject unknown parent
+Input: Add Test Department under uhh.
+Expected: Unknown-parent error and return to menu.
+Actual: Unknown-parent error; returned to menu.
+Result: PASS
+
+C7: Missing search and blank department name
+Input: Search for missng department; add a blank department name.
+Expected: Not-found and blank-name errors; return to menu.
+Actual: Both errors displayed and menu remained usable.
+Result: PASS
+
+C8: Invalid menu input
+Input: abc and 10abc.
+Expected: Invalid-input errors without exiting.
+Actual: Both rejected; program remained open.
+Result: PASS
+
+C9: Search loaded root
+Input: Option 7, University.
+Expected: Parent None, 2 children, depth 0.
+Actual: Matched expected details.
+Result: PASS
+
+C10: Missing files and empty preorder
+Input: Run with a nonexistent data directory; select option 9.
+Expected: Missing-file errors, zero department load counts,
+and an empty-tree message without crashing.
+Actual: Observed expected errors, counts, and message.
+Result: PASS
+
+C11: Create and display root-only tree
+Input:
+printf '6\nTest University\n7\nTest University\n8\n9\n0\n' | ./campus /tmp/campus-missing-jmr0842
+
+Expected: Root added without a parent prompt; search shows
+parent None, 0 children, depth 0; both displays show only
+Test University; option 0 exits.
+Actual: All expected behavior observed.
+Result: PASS
+
+Scope: These results cover the Member C checks performed on CELL.
+Additional team-wide validation and testing remain.
