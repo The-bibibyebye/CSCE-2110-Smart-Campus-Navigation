@@ -1,5 +1,5 @@
 // Purpose: Defines the general department tree.
-// Author: Member C, with AI assistance.
+// Author: Member C: Jordan Robinson.
 
 #ifndef DEPARTMENT_TREE_H
 #define DEPARTMENT_TREE_H
