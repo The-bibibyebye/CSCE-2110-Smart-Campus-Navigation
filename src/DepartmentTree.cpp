@@ -1,5 +1,5 @@
 // Purpose: Implements department loading, search, and tree traversals.
-// Author: Member C, with AI assistance.
+// Author: Member C: Jordan Robinson.
 
 #include "../include/DepartmentTree.h"
 #include <fstream>
