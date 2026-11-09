@@ -1,6 +1,6 @@
 // Initial implementation by: Deepsan Shrestha
 // Facility integration by: Member A
-// Department integration by: Member C, with AI assistance
+// Department integration by: Member C, 
 // Purpose: Load campus data and coordinate the Milestone 1 menu.
 
 #include <iostream>
