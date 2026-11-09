@@ -84,3 +84,80 @@ Result: PASS
 
 Scope: These results cover the Member C checks performed on CELL.
 Additional team-wide validation and testing remain.
+
+Additional Milestone 1 CELL Tests
+Environment: cell02-cse
+Date: November 8, 2026
+
+T12: Updated loader build and sample data
+Input: Compile with the documented C++11 command; run ./campus.
+Expected: No compiler diagnostics; accepted totals 7 buildings,
+6 connections, 10 facilities, 7 departments; no rejected records.
+Actual: Compilation completed without reported diagnostics.
+All four accepted/rejected totals matched.
+Result: PASS
+
+T13: Invalid records and normalized names
+Input: ./campus testdata/validation; select 1, 9, 0.
+Expected accepted/rejected counts:
+Buildings 2/2; connections 1/3; facilities 2/4; departments 2/3.
+Warnings identify filename, line number, and rejection reason.
+Accepted facilities retain both Room #5 records, uppercase IDs,
+canonical building spelling, and the first category spelling.
+Actual: All counts matched. Warnings identified duplicate records,
+malformed fields, self-connections, unknown references, invalid IDs,
+and blank required fields. Facilities displayed:
+F001 | Room #5 | Alpha | Lab
+F002 | Room #5 | Beta | Lab
+Department preorder was Campus -> College.
+Result: PASS
+
+T14: Custom hash collision
+Input: testdata/collision with F001 and F013, capacity 11.
+Expected: 2 accepted, 0 rejected, 2 entries, 1 collision.
+Actual: 2 accepted, 0 rejected, 2 entries, 1 collision.
+Result: PASS
+
+T15: Duplicate insertion preserves collision count
+Input: testdata/collision-duplicate adds f001 after F001 and F013.
+Expected: Duplicate rejected; 2 entries and 1 collision unchanged.
+Actual: 2 accepted, 1 rejected, 2 entries, 1 collision.
+Result: PASS
+
+T16: Facility ID search outcomes
+Input: Search f001, 004, and F999 in the collision dataset.
+Expected: F001 found, 004 invalid, F999 not found.
+Actual: All three outcomes matched.
+Result: PASS
+
+T17: Sample graph display and counts
+Input: Options 3 and 4 with instructor data.
+Expected: 7 buildings, 6 undirected connections.
+Degrees: Library 2, Student Union 3, Science Building 2,
+Engineering Building 1, Business Building 2, Gym 2, Observatory 0.
+Actual: All counts and degrees matched. Observatory displayed
+(no connections). Neighbors remained in insertion order.
+Result: PASS
+
+T18: BFS connected, isolated, and unknown starts
+Input: Option 5 from Library, Observatory, and Missing Building.
+Expected Library order and distances:
+Library 0, Student Union 1, Business Building 1,
+Science Building 2, Gym 2, Engineering Building 3.
+Library reaches 6 of 7 buildings.
+Observatory reaches only itself at distance 0, 1 of 7 buildings.
+Unknown start reports an error and returns to the menu.
+Actual: All orders, distances, counts, and error behavior matched.
+Result: PASS
+
+T19: Windows line endings and field-edge handling
+Input: testdata/file-edges, containing CRLF endings, blank lines,
+a whitespace-prefixed comment, outer whitespace, lowercase f004,
+Room #5, and records with too few fields.
+Expected accepted/rejected counts:
+Buildings 2/0; connections 1/1; facilities 1/1; departments 2/1.
+Facility F004 displays Room #5 | Alpha | Lab.
+Department preorder is Campus -> Child.
+Actual: All counts, warnings, facility output, search result,
+and preorder matched.
+Result: PASS

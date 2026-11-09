@@ -1,0 +1,5 @@
+Campus|NONE
+College|campus
+COLLEGE|Campus
+Orphan|Missing
+Bad|Too|Many
