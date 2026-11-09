@@ -30,3 +30,18 @@ Contributions:
 -Added input validation to handle invalid menu choices, non-numeric input, and blank building names.
 -Tested graph functionality, BFS, disconnected buildings, and invalid inputs.
 -Used Git branches and pull requests to merge my code into the main branch.
+
+Member C: Jordan Robinson
+
+Contributions:
+- Implemented the DepartmentTree general tree using dynamically sized
+  child lists and automatic memory management.
+- Added departments.txt loading with validation, line-numbered warnings,
+  and accepted/rejected summaries.
+- Implemented department insertion and case-insensitive search.
+- Added hierarchy display and preorder traversal.
+- Connected department loading and menu options 6-9 in main.cpp.
+- Added optional data-directory support.
+- Compiled and tested the combined code on CELL.
+- Recorded department test inputs, expected results, and actual results
+in test_results.txt.
