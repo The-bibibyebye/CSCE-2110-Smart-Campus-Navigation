@@ -1,6 +1,7 @@
 // Initial implementation by: Deepsan Shrestha
-// Purpose: Provides the main menu, file loading, input validation,
-// and integration of CampusGraph functionality.
+// Facility integration by: Member A
+// Department integration by: Member C, with AI assistance
+// Purpose: Load campus data and coordinate the Milestone 1 menu.
 
 #include <iostream>
 #include <string>
@@ -9,16 +10,21 @@
 #include <vector>
 #include "include/CampusGraph.h"
 #include "include/Hashtable.h"
+#include "include/DepartmentTree.h"
+
 using namespace std;
 
-int main(){
-    // Creates a CampusGraph object
+// Load campus data, then process menu operations until exit.
+int main(int argc, char* argv[]) {
+    const string dataDirectory = argc > 1 ? argv[1] : "data";
+
     CampusGraph campus;
     HashTable facilities;
+    DepartmentTree departments;
     vector<string> buildingList;
 
-    // Loads buildings from file
-    ifstream buildingFile("data/buildings.txt");
+    // Load buildings first.
+    ifstream buildingFile(dataDirectory + "/buildings.txt");
     string buildingName;
 
     if (!buildingFile.is_open()) {
@@ -32,19 +38,24 @@ int main(){
 
             bool added = campus.addBuilding(buildingName);
 
-            if (added == true) {
-            size_t first = buildingName.find_first_not_of(" \t\r\n\f\v");
-            size_t last = buildingName.find_last_not_of(" \t\r\n\f\v");
+            if (added) {
+                size_t first =
+                    buildingName.find_first_not_of(" \t\r\n\f\v");
+                size_t last =
+                    buildingName.find_last_not_of(" \t\r\n\f\v");
 
-            string savedName = buildingName.substr(first, last - first + 1);
-            buildingList.push_back(savedName);
+                string savedName =
+                    buildingName.substr(first, last - first + 1);
+
+                buildingList.push_back(savedName);
             }
         }
 
         buildingFile.close();
     }
-    // Load connections from file
-    ifstream connectionFile("data/connections.txt");
+
+    // Load connections second.
+    ifstream connectionFile(dataDirectory + "/connections.txt");
     string connectionLine;
 
     if (!connectionFile.is_open()) {
@@ -52,17 +63,15 @@ int main(){
     }
     else {
         while (getline(connectionFile, connectionLine)) {
-
-            // Skips empty lines and comments
             if (connectionLine.empty() || connectionLine[0] == '#') {
                 continue;
             }
 
-            // Finds the separator between building names
             size_t separator = connectionLine.find('|');
 
             if (separator == string::npos) {
-                cout << "Invalid connection: " << connectionLine << endl;
+                cout << "Invalid connection: "
+                     << connectionLine << endl;
                 continue;
             }
 
@@ -74,8 +83,9 @@ int main(){
 
         connectionFile.close();
     }
-            // Load facilities from the file
-    ifstream facilityFile("data/facilities.txt");
+
+    // Load facilities third.
+    ifstream facilityFile(dataDirectory + "/facilities.txt");
     string facilityLine;
     int accepted = 0;
     int rejected = 0;
@@ -92,162 +102,176 @@ int main(){
             if (facilityLine.empty() || facilityLine[0] == '#') {
                 continue;
             }
-            // check the number of fields
-            int count = 0;
-            for (size_t i = 0; i < facilityLine.size(); i++){
-             if (facilityLine[i] == '|') {
-              count++;
+
+            int separatorCount = 0;
+
+            for (char character : facilityLine) {
+                if (character == '|') {
+                    ++separatorCount;
                 }
             }
 
-            if (count != 3) {
-                rejected++;
+            if (separatorCount != 3) {
+                ++rejected;
                 cout << "Wrong number of fields." << endl;
                 continue;
             }
-            stringstream newLine(facilityLine);
+
+            stringstream record(facilityLine);
             Facility newFacility;
 
-            getline(newLine, newFacility.facilityId, '|');
-            getline(newLine, newFacility.facilityName, '|');
-            getline(newLine, newFacility.buildingName, '|');
-            getline(newLine, newFacility.category, '|');
+            getline(record, newFacility.facilityId, '|');
+            getline(record, newFacility.facilityName, '|');
+            getline(record, newFacility.buildingName, '|');
+            getline(record, newFacility.category, '|');
 
-
-            // Check for missing information
-            if (newFacility.facilityName.empty()
-                 || newFacility.buildingName.empty()
-                 || newFacility.category.empty()) {
-
-                rejected++;
-                 cout << "Missing facility information." << endl;
-              continue;
+            if (newFacility.facilityName.empty() ||
+                newFacility.buildingName.empty() ||
+                newFacility.category.empty()) {
+                ++rejected;
+                cout << "Missing facility information." << endl;
+                continue;
             }
-            bool added = facilities.addFacility(newFacility);
 
-            if (added == false) {
-                rejected++;
-                cout << "Could not add facility: "
-                     << newFacility.facilityId << endl;
+            if (facilities.addFacility(newFacility)) {
+                ++accepted;
             }
             else {
-                accepted++;
+                ++rejected;
+                cout << "Could not add facility: "
+                     << newFacility.facilityId << endl;
             }
         }
 
         facilityFile.close();
     }
-     cout << "facilities.txt: " << accepted << " accepted, "
-     << rejected << " rejected" << endl;
 
-     cout << "Table size: " << facilities.getTableSize()
-     << " | Facilities: " << facilities.getFacilityCount()
-     << " | Collisions: " << facilities.getCollisionCount() << endl;
+    cout << "facilities.txt: " << accepted << " accepted, "
+         << rejected << " rejected" << endl;
 
+    cout << "Table size: " << facilities.getTableSize()
+         << " | Facilities: " << facilities.getFacilityCount()
+         << " | Collisions: " << facilities.getCollisionCount()
+         << endl;
 
-    int choice= 0;
-    cout << "Smart Campus Navigation and Facility Analytics System" << endl;
+    // Load departments fourth.
+    departments.load(dataDirectory + "/departments.txt", cout);
 
-    // menu loop
+    cout << "Smart Campus Navigation and Facility Analytics System"
+         << endl;
+
+    int choice = -1;
+
     do {
-        cout << "\n===== SMART CAMPUS NAVIGATION MENU =====" << endl;
-        cout << "1. View all facilities" << endl;
-        cout << "2. Search facility by ID" << endl;
-        cout << "3. View campus graph" << endl;
-        cout << "4. Display graph counts and degrees" << endl;
-        cout << "5. Find reachable buildings (BFS)" << endl;
-        cout << "6. Add department" << endl;
-        cout << "7. Search department" << endl;
-        cout << "8. Display department hierarchy" << endl;
-        cout << "9. Run preorder traversal" << endl;
-        cout << "10. Exit" << endl;
-
+        cout << "\n===== SMART CAMPUS NAVIGATION MENU =====\n";
+        cout << "1. View all facilities\n";
+        cout << "2. Search facility by ID\n";
+        cout << "3. View campus graph\n";
+        cout << "4. Display graph counts and degrees\n";
+        cout << "5. Find reachable buildings (BFS)\n";
+        cout << "6. Add department\n";
+        cout << "7. Search department\n";
+        cout << "8. Display department hierarchy\n";
+        cout << "9. Run preorder traversal\n";
+        cout << "10. Exit\n";
+        cout << "0. Exit (alias)\n";
         cout << "Enter your choice: ";
 
- 
-        // Checks for invalid input
         string input;
+
         if (!getline(cin, input)) {
             break;
         }
 
-        stringstream ss(input);
+        stringstream menuInput(input);
+        int parsedChoice;
         char extra;
 
-        if (!(ss >> choice) || (ss >> extra)) {
-            cout << "Invalid input. Please enter a number from 1 to 10." << endl;
+        // Reject blank input, letters, and trailing characters.
+        if (!(menuInput >> parsedChoice) || (menuInput >> extra)) {
+            cout << "Invalid input. Enter 1 through 10, or 0 to exit.\n";
             continue;
         }
 
-        // Handles user choices
+        choice = parsedChoice;
 
         if (choice == 1) {
-    facilities.displayFacilities();
-    }
-
-    else if (choice == 2) {
-    string facilityId;
-    Facility result;
-
-    cout << "Enter facility ID: ";
-    getline(cin, facilityId);
-
-    bool valid = facilities.checkId(facilityId);
-
-    if (valid == false) {
-        cout << "Invalid ID. Use F and three digits, like F004." << endl;
-    }
-    else {
-        bool found = facilities.findFacility(facilityId, result);
-
-        if (found == true) {
-            cout << result.facilityId << " | " << result.facilityName
-                 << " | " << result.buildingName << " | "
-                 << result.category << endl;
+            facilities.displayFacilities();
         }
-        else {
-            cout << "Facility not found: " << facilityId << endl;
+        else if (choice == 2) {
+            string facilityId;
+            Facility result;
+
+            cout << "Enter facility ID: ";
+
+            if (!getline(cin, facilityId)) {
+                break;
+            }
+
+            if (!facilities.checkId(facilityId)) {
+                cout << "Invalid ID. Use F and three digits, like F004.\n";
+            }
+            else if (facilities.findFacility(facilityId, result)) {
+                cout << result.facilityId << " | "
+                     << result.facilityName << " | "
+                     << result.buildingName << " | "
+                     << result.category << '\n';
+            }
+            else {
+                cout << "Facility not found: " << facilityId << '\n';
+            }
         }
-     }
-    }
-        else if (choice==3){
+        else if (choice == 3) {
             campus.displayGraph();
         }
-        
-        else if (choice==4){
+        else if (choice == 4) {
             campus.displayStatistics();
         }
-
-        else if (choice==5){
+        else if (choice == 5) {
             string startingBuilding;
+
             cout << "Enter the starting building: ";
-            getline(cin, startingBuilding);
-            
 
-                if (startingBuilding.find_first_not_of(" \t\n\r") == string::npos) {
-                    cout << "Error: Building name cannot be blank." << endl;
-                }
-                else{
-                    campus.displayReachable(startingBuilding);
-                }
+            if (!getline(cin, startingBuilding)) {
+                break;
+            }
+
+            if (startingBuilding.find_first_not_of(
+                    " \t\r\n\f\v") == string::npos) {
+                cout << "Error: Building name cannot be blank.\n";
+            }
+            else {
+                campus.displayReachable(startingBuilding);
+            }
         }
-
-        else if (choice==10){
-            cout << "Exiting the program." << endl;
+        else if (choice == 6) {
+            departments.promptAdd(cin, cout);
         }
+        else if (choice == 7) {
+            string name;
 
-        else if (choice < 1 || choice > 10) {
-            cout << "Invalid choice. Please try again." << endl;
+            cout << "Enter department name: ";
+
+            if (!getline(cin, name)) {
+                break;
+            }
+
+            departments.displayDepartment(name, cout);
         }
-
+        else if (choice == 8) {
+            departments.displayHierarchy(cout);
+        }
+        else if (choice == 9) {
+            departments.displayPreorder(cout);
+        }
+        else if (choice == 10 || choice == 0) {
+            cout << "Exiting the program.\n";
+        }
         else {
-            cout << "This feature will be implemented by another team member." << endl;
-        }       
+            cout << "Invalid choice. Please try again.\n";
+        }
 
-    } while (choice != 10);
+    } while (choice != 10 && choice != 0);
 
-
-
-    
     return 0;
 }
