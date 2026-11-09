@@ -1,0 +1,6 @@
+f001|Room #5|alpha|Lab
+F001|Duplicate|Beta|Other
+F002|Room #5|BETA|lab
+F003|Unknown Room|Missing|Lab
+004|Invalid ID|Alpha|Lab
+F005|   |Alpha|Lab

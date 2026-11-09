@@ -1,6 +1,6 @@
 // Initial implementation by: Deepsan Shrestha
 // Facility integration by: Member A
-// Department integration by: Member C, 
+// Department integration and loading validation by: Member C
 // Purpose: Load campus data and coordinate the Milestone 1 menu.
 
 #include <iostream>
@@ -14,146 +14,191 @@
 
 using namespace std;
 
-// Load campus data, then process menu operations until exit.
+namespace {
+
+// Remove outer ASCII whitespace without changing spaces inside names.
+string trimField(const string& text) {
+    size_t first = text.find_first_not_of(" \t\r\n\f\v");
+    if (first == string::npos) return "";
+    size_t last = text.find_last_not_of(" \t\r\n\f\v");
+    return text.substr(first, last - first + 1);
+}
+
+// Match names without regard to ASCII capitalization.
+string nameKey(const string& text) {
+    string result = trimField(text);
+    for (char& c : result) {
+        if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+    }
+    return result;
+}
+
+// Return the accepted spelling, or an empty string for an unknown name.
+string acceptedName(const vector<string>& names, const string& value) {
+    const string key = nameKey(value);
+    for (const string& name : names) {
+        if (nameKey(name) == key) return name;
+    }
+    return "";
+}
+
+// Split all fields, including an empty field after a trailing pipe.
+vector<string> splitFields(const string& line) {
+    vector<string> fields;
+    size_t start = 0;
+    while (true) {
+        size_t separator = line.find('|', start);
+        fields.push_back(trimField(line.substr(start, separator - start)));
+        if (separator == string::npos) break;
+        start = separator + 1;
+    }
+    return fields;
+}
+
+// Print a rejection with the source file and physical line number.
+void warning(const string& filename, size_t line, const string& reason) {
+    cout << "Warning: " << filename << ':' << line << ": " << reason << '\n';
+}
+
+// Read accepted buildings in file order and retain their original spelling.
+vector<string> loadBuildings(CampusGraph& campus, const string& filename) {
+    vector<string> names;
+    ifstream file(filename);
+    size_t accepted = 0, rejected = 0, lineNumber = 0;
+    if (!file) cout << "Error: Could not open " << filename << '\n';
+    string line;
+    while (getline(file, line)) {
+        ++lineNumber;
+        line = trimField(line);
+        if (line.empty() || line[0] == '#') continue;
+        string error;
+        if (line.find('|') != string::npos) {
+            error = "Expected one building-name field.";
+        }
+        else if (!campus.addBuilding(line)) {
+            error = "Duplicate building: " + line;
+        }
+        else {
+            names.push_back(line);
+            ++accepted;
+            continue;
+        }
+        ++rejected;
+        warning(filename, lineNumber, error);
+    }
+    cout << filename << ": " << accepted << " accepted, "
+         << rejected << " rejected\n";
+    return names;
+}
+
+// Add undirected connections without changing neighbor insertion order.
+void loadConnections(CampusGraph& campus, const vector<string>& buildings,
+                     const string& filename) {
+    ifstream file(filename);
+    size_t accepted = 0, rejected = 0, lineNumber = 0;
+    if (!file) cout << "Error: Could not open " << filename << '\n';
+    string line;
+    while (getline(file, line)) {
+        ++lineNumber;
+        line = trimField(line);
+        if (line.empty() || line[0] == '#') continue;
+        vector<string> fields = splitFields(line);
+        string error;
+        if (fields.size() != 2) {
+            error = "Expected BuildingA|BuildingB.";
+        }
+        else if (fields[0].empty() || fields[1].empty()) {
+            error = "Building fields must be nonempty.";
+        }
+        else {
+            string a = acceptedName(buildings, fields[0]);
+            string b = acceptedName(buildings, fields[1]);
+            if (a.empty() || b.empty()) {
+                error = "Unknown building: " + (a.empty() ? fields[0] : fields[1]);
+            }
+            else if (a == b) {
+                error = "Self-connections are not allowed: " + a;
+            }
+            else if (!campus.addConnection(a, b)) {
+                error = "Duplicate connection: " + a + " | " + b;
+            }
+            else {
+                ++accepted;
+                continue;
+            }
+        }
+        ++rejected;
+        warning(filename, lineNumber, error);
+    }
+    cout << filename << ": " << accepted << " accepted, "
+         << rejected << " rejected\n";
+}
+
+// Validate facility records; ID lookup and duplicate checks use the hash table.
+void loadFacilities(HashTable& facilities, const vector<string>& buildings,
+                    const string& filename) {
+    ifstream file(filename);
+    vector<string> categories;
+    size_t accepted = 0, rejected = 0, lineNumber = 0;
+    if (!file) cout << "Error: Could not open " << filename << '\n';
+    string line;
+    while (getline(file, line)) {
+        ++lineNumber;
+        line = trimField(line);
+        if (line.empty() || line[0] == '#') continue;
+        vector<string> fields = splitFields(line);
+        string error;
+        if (fields.size() != 4) {
+            error = "Expected FacilityID|FacilityName|BuildingName|Category.";
+        }
+        else if (fields[0].empty() || fields[1].empty() ||
+                 fields[2].empty() || fields[3].empty()) {
+            error = "All facility fields must be nonempty.";
+        }
+        else if (!facilities.checkId(fields[0])) {
+            error = "Invalid ID: use F followed by exactly three digits.";
+        }
+        else {
+            string building = acceptedName(buildings, fields[2]);
+            if (building.empty()) {
+                error = "Unknown building: " + fields[2];
+            }
+            else {
+                string category = acceptedName(categories, fields[3]);
+                Facility facility;
+                facility.facilityId = fields[0];
+                facility.facilityName = fields[1];
+                facility.buildingName = building;
+                facility.category = category.empty() ? fields[3] : category;
+                if (facilities.addFacility(facility)) {
+                    if (category.empty()) categories.push_back(facility.category);
+                    ++accepted;
+                    continue;
+                }
+                error = "Duplicate facility ID: " + fields[0];
+            }
+        }
+        ++rejected;
+        warning(filename, lineNumber, error);
+    }
+    cout << filename << ": " << accepted << " accepted, "
+         << rejected << " rejected | hash capacity: " << facilities.getTableSize()
+         << " | entries: " << facilities.getFacilityCount()
+         << " | collisions: " << facilities.getCollisionCount() << '\n';
+}
+
+} // namespace
+
+// Coordinate ordered loading and the Milestone 1 menu.
 int main(int argc, char* argv[]) {
     const string dataDirectory = argc > 1 ? argv[1] : "data";
-
     CampusGraph campus;
     HashTable facilities;
     DepartmentTree departments;
-    vector<string> buildingList;
 
-    // Load buildings first.
-    ifstream buildingFile(dataDirectory + "/buildings.txt");
-    string buildingName;
-
-    if (!buildingFile.is_open()) {
-        cout << "Error: Could not open buildings.txt" << endl;
-    }
-    else {
-        while (getline(buildingFile, buildingName)) {
-            if (buildingName.empty() || buildingName[0] == '#') {
-                continue;
-            }
-
-            bool added = campus.addBuilding(buildingName);
-
-            if (added) {
-                size_t first =
-                    buildingName.find_first_not_of(" \t\r\n\f\v");
-                size_t last =
-                    buildingName.find_last_not_of(" \t\r\n\f\v");
-
-                string savedName =
-                    buildingName.substr(first, last - first + 1);
-
-                buildingList.push_back(savedName);
-            }
-        }
-
-        buildingFile.close();
-    }
-
-    // Load connections second.
-    ifstream connectionFile(dataDirectory + "/connections.txt");
-    string connectionLine;
-
-    if (!connectionFile.is_open()) {
-        cout << "Error: Could not open connections.txt" << endl;
-    }
-    else {
-        while (getline(connectionFile, connectionLine)) {
-            if (connectionLine.empty() || connectionLine[0] == '#') {
-                continue;
-            }
-
-            size_t separator = connectionLine.find('|');
-
-            if (separator == string::npos) {
-                cout << "Invalid connection: "
-                     << connectionLine << endl;
-                continue;
-            }
-
-            string buildingA = connectionLine.substr(0, separator);
-            string buildingB = connectionLine.substr(separator + 1);
-
-            campus.addConnection(buildingA, buildingB);
-        }
-
-        connectionFile.close();
-    }
-
-    // Load facilities third.
-    ifstream facilityFile(dataDirectory + "/facilities.txt");
-    string facilityLine;
-    int accepted = 0;
-    int rejected = 0;
-
-    if (!facilityFile.is_open()) {
-        cout << "Error: Could not open facilities.txt" << endl;
-    }
-    else {
-        while (getline(facilityFile, facilityLine)) {
-            if (!facilityLine.empty() && facilityLine.back() == '\r') {
-                facilityLine.pop_back();
-            }
-
-            if (facilityLine.empty() || facilityLine[0] == '#') {
-                continue;
-            }
-
-            int separatorCount = 0;
-
-            for (char character : facilityLine) {
-                if (character == '|') {
-                    ++separatorCount;
-                }
-            }
-
-            if (separatorCount != 3) {
-                ++rejected;
-                cout << "Wrong number of fields." << endl;
-                continue;
-            }
-
-            stringstream record(facilityLine);
-            Facility newFacility;
-
-            getline(record, newFacility.facilityId, '|');
-            getline(record, newFacility.facilityName, '|');
-            getline(record, newFacility.buildingName, '|');
-            getline(record, newFacility.category, '|');
-
-            if (newFacility.facilityName.empty() ||
-                newFacility.buildingName.empty() ||
-                newFacility.category.empty()) {
-                ++rejected;
-                cout << "Missing facility information." << endl;
-                continue;
-            }
-
-            if (facilities.addFacility(newFacility)) {
-                ++accepted;
-            }
-            else {
-                ++rejected;
-                cout << "Could not add facility: "
-                     << newFacility.facilityId << endl;
-            }
-        }
-
-        facilityFile.close();
-    }
-
-    cout << "facilities.txt: " << accepted << " accepted, "
-         << rejected << " rejected" << endl;
-
-    cout << "Table size: " << facilities.getTableSize()
-         << " | Facilities: " << facilities.getFacilityCount()
-         << " | Collisions: " << facilities.getCollisionCount()
-         << endl;
-
+    vector<string> buildings = loadBuildings(campus, dataDirectory + "/buildings.txt");
+    loadConnections(campus, buildings, dataDirectory + "/connections.txt");
+    loadFacilities(facilities, buildings, dataDirectory + "/facilities.txt");
     // Load departments fourth.
     departments.load(dataDirectory + "/departments.txt", cout);
 
@@ -241,7 +286,7 @@ int main(int argc, char* argv[]) {
                 cout << "Error: Building name cannot be blank.\n";
             }
             else {
-                campus.displayReachable(startingBuilding);
+                campus.displayReachable(trimField(startingBuilding));
             }
         }
         else if (choice == 6) {

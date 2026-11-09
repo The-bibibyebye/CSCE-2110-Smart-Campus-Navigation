@@ -1,0 +1,66 @@
+Smart Campus Navigation — Milestone 1 Design
+
+FACILITIES AND CUSTOM HASH TABLE
+Facility stores ID, name, building, and category. HashTable maintains
+a vector of buckets and a separate vector for facility display order.
+IDs are trimmed and normalized to uppercase before validation, hashing,
+storage, and lookup. Valid IDs are F followed by exactly three digits.
+
+The custom hash starts at h = 0 and processes each normalized character:
+h = (31 * h + ASCII(character)) % capacity
+
+The constructor defaults to capacity 11. Separate chaining stores a
+vector of facilities in each bucket. Chains grow dynamically, avoiding
+a fixed maximum number of facilities or a full-table rejection.
+
+A collision is counted once for each successful insertion into an
+already nonempty bucket. A duplicate ID is rejected before the collision
+counter changes. ID lookup searches only the calculated bucket; it does
+not scan every facility or use a library hash container.
+
+Facility names may repeat. Building and category names use the spelling
+of their first accepted records. Category spelling is recorded only
+after a facility is successfully accepted.
+
+CAMPUS GRAPH AND BFS
+CampusGraph uses a vector of building names and a parallel vector of
+neighbor-index vectors. This adjacency-list representation grows with
+the input and preserves building and neighbor insertion order.
+
+Each undirected connection is stored at both endpoints. Duplicate,
+reversed duplicate, and self-connections are rejected. Total connections
+are calculated as half the sum of vertex degrees.
+
+BFS uses a queue, visited flags, and distances. Buildings are marked
+visited when enqueued. The start has distance zero and counts as
+reachable. Each undiscovered neighbor receives its parent's distance
+plus one. An isolated start reaches only itself.
+
+DEPARTMENT TREE
+DepartmentTree is a general tree: every node has a name, a non-owning
+parent pointer, and a vector of owning child pointers. A node may have
+any number of children. unique_ptr ownership releases descendants
+automatically when the tree is destroyed.
+
+The first accepted department requires parent NONE. Later records must
+name an already accepted parent. Names are unique ignoring case and
+outer whitespace; accepted spelling and sibling insertion order remain.
+
+Search reports name, parent, direct-child count, and depth. Root depth
+is zero. Preorder visits the current node before each child's subtree.
+Hierarchy display uses four spaces per depth; flat preorder uses arrows.
+Root creation from the menu does not ask for a parent when empty.
+
+LOADING AND PROGRAM ORGANIZATION
+main.cpp contains shared loading helpers and coordinates the menu.
+HashTable, CampusGraph, and DepartmentTree contain their respective
+data-structure operations.
+
+Loaders read complete lines, trim ASCII whitespace including carriage
+returns, ignore blank lines and whitespace-prefixed comments, validate
+field counts and references, and report rejected physical line numbers.
+Every file produces accepted/rejected totals. Facilities also report
+hash capacity, entries, and collisions.
+
+All records, counts, BFS results, and hierarchies come from input data.
+The optional command-line directory defaults to the relative path data.
